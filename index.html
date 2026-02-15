@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Para ti 💗</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at center, #050512, #020206);
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+/* ===== FRASE CENTRAL ===== */
+#frase {
+  position: absolute;
+  top: 72%;
+  width: 100%;
+  text-align: center;
+  color: rgba(255,190,225,0.75);
+  letter-spacing: 3px;
+  font-size: 14px;
+  z-index: 4;
+}
+
+/* ===== INDICADOR ===== */
+#hint {
+  position: absolute;
+  top: 78%;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 2px;
+  animation: blink 2s infinite;
+  z-index: 4;
+}
+
+@keyframes blink {
+  0%,100% { opacity: .2; }
+  50% { opacity: .8; }
+}
+
+/* ===== BOTÓN ENTRAR ===== */
+#enter {
+  position: absolute;
+  top: 88%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px 38px;
+  border-radius: 40px;
+  border: 1px solid rgba(255,160,220,0.6);
+  color: #ffd1ec;
+  font-size: 18px;
+  letter-spacing: 3px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: 0.4s;
+  z-index: 5;
+  animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,100% { box-shadow: 0 0 10px rgba(255,160,220,0.4); }
+  50% { box-shadow: 0 0 30px rgba(255,160,220,0.9); }
+}
+
+#enter:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+/* ===== MENÚ DISCRETO ===== */
+nav {
+  position: fixed;
+  bottom: 18px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  z-index: 4;
+}
+
+nav a {
+  color: rgba(255,180,220,0.6);
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 2px;
+  transition: 0.3s;
+}
+
+nav a:hover {
+  color: white;
+  text-shadow: 0 0 10px #ff9edb;
+}
+/* ===== RESPONSIVE CELULAR ===== */
+@media (max-width: 768px) {
+
+  #frase {
+    top: 65%;
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  #hint {
+    top: 72%;
+    font-size: 10px;
+  }
+
+  #enter {
+    top: 82%;
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+
+  nav {
+    gap: 25px;
+  }
+
+  nav a {
+    font-size: 10px;
+  }
+
+}
+</style>
+</head>
+
+<body>
+
+<div id="frase">DONDE EMPIEZA TODO</div>
+<div id="hint">toca para continuar</div>
+
+<button id="enter" onclick="location.href='mensaje.html'">
+  ENTRAR 💗
+</button>
+
+<nav>
+  <a href="mensaje.html">MENSAJE</a>
+  <a href="galeria.html">GALERÍA</a>
+  <a href="musica.html">MÚSICA</a>
+</nav>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let w, h;
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+/* 🌌 GALAXIA */
+const stars = [];
+for (let i = 0; i < 900; i++) {
+  stars.push({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    r: Math.random() * 0.9 + 0.2,
+    a: Math.random()
+  });
+}
+
+/* 💗 CORAZÓN */
+const CORE = { r: 255, g: 105, b: 180 };
+const GLOW = { r: 255, g: 160, b: 220 };
+
+function isInsideHeart(x, y) {
+  y = -y;
+  x /= 16;
+  y /= 16;
+  return Math.pow(x*x + y*y - 1, 3) - x*x*y*y*y <= 0;
+}
+
+const particles = [];
+for (let i = 0; i < 4500; i++) {
+  let x, y;
+  do {
+    x = Math.random() * 40 - 20;
+    y = Math.random() * 40 - 20;
+  } while (!isInsideHeart(x, y));
+  particles.push({
+    x, y,
+    size: Math.random() * 0.15 + 0.04,
+    phase: Math.random() * Math.PI * 2
+  });
+}
+
+/* 🫀 LATIDO + MICRO INTERACCIÓN */
+let t = 0;
+let extraBeat = 0;
+
+canvas.addEventListener("click", () => {
+  extraBeat = 0.6;
+});
+
+function heartbeat(t) {
+  return Math.pow(Math.sin(t), 2) * Math.exp(-0.18 * (t % (2 * Math.PI)));
+}
+
+function animate() {
+  ctx.clearRect(0, 0, w, h);
+  t += 0.045;
+  extraBeat *= 0.92;
+
+  stars.forEach(s => {
+    ctx.fillStyle = `rgba(255,255,255,${0.2 + s.a * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  const beat = 1 + heartbeat(t) * (0.35 + extraBeat);
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.scale(10 * beat, 10 * beat);
+
+  particles.forEach(p => {
+    const pulse = Math.sin(t + p.phase) * 0.5 + 0.5;
+
+    ctx.fillStyle = `rgba(${GLOW.r},${GLOW.g},${GLOW.b},0.12)`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgba(${CORE.r},${CORE.g},${CORE.b},${0.4 + pulse * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+  requestAnimationFrame(animate);
+  drawFloatingTexts();
+
+}
+/* 🌠 FRASES FUGACES */
+const phrases = [
+  "Siempre tú",
+  "Te pienso siempre",
+  "Mi niña de ojos hermosos",
+  "Mi luna",
+  "Mi Anais hermosa",
+  "Mi princesa",
+  "Mi Kiwisito",
+  "Mi gran amor"
+];
+
+const floatingTexts = [];
+
+function spawnText() {
+  const text = phrases[Math.floor(Math.random() * phrases.length)];
+  floatingTexts.push({
+    text,
+    x: Math.random() * w,
+    y: h + 40,
+    vx: Math.random() * 0.6 + 0.3,
+    vy: -(Math.random() * 1.4 + 0.6),
+    alpha: 0,
+    life: 0,
+    size: Math.random() * 8 + 14
+  });
+}
+
+// generar ocasionalmente
+setInterval(() => {
+  if (Math.random() < 0.7) spawnText();
+}, 2200);
+
+function drawFloatingTexts() {
+  floatingTexts.forEach((f, i) => {
+    f.life += 0.01;
+
+    // fade in / out
+    if (f.life < 0.2) f.alpha += 0.02;
+    else if (f.life > 0.8) f.alpha -= 0.02;
+
+    f.x += f.vx;
+    f.y += f.vy;
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, f.alpha);
+    ctx.font = `${f.size}px "Segoe UI", sans-serif`;
+    ctx.textAlign = "center";
+
+    // glow fluorescente
+    ctx.shadowColor = "rgba(255,150,210,0.6)";
+    ctx.shadowBlur = 12;
+
+    ctx.fillStyle = "rgba(255,180,220,0.9)";
+    ctx.fillText(f.text, f.x, f.y);
+
+    ctx.restore();
+
+    if (f.alpha <= 0 || f.y < -50) {
+      floatingTexts.splice(i, 1);
+    }
+  });
+}
+
+animate();
+</script>
+
+</body>
+</html>
