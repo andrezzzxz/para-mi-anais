@@ -52,12 +52,12 @@ canvas {
     width: 300px;
     border-radius:10px;
 }
-/* ===== FONDO MÁS PEQUEÑO EN CELULAR ===== */
+/* ===== FONDO SOLO PARA CELULAR ===== */
 @media (max-width: 900px) {
 
     body {
-        background-size: contain;
-        background-position: center top;
+        background: url('img/fondomob.png') no-repeat center center;
+        background-size: cover;
     }
 
 }
@@ -237,3 +237,4 @@ window.addEventListener('resize',()=>{
 </script>
 </body>
 </html>
+
