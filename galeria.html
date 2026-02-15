@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Galaxia Romántica Realista con Fotos</title>
+<style>
+    body {
+        margin: 0;
+        background: #000;
+        overflow: hidden;
+        height: 100vh;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        color: #fff;
+    }
+    canvas {
+        display: block;
+        filter: contrast(1.05) saturate(1.05);
+    }
+    #controls {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        z-index: 10;
+    }
+    button {
+        padding: 10px 18px;
+        margin: 8px;
+        background: #111;
+        color: #fff;
+        border: 1px solid #444;
+        cursor: pointer;
+        font-size: 16px;
+        border-radius: 8px;
+        transition: 0.2s;
+    }
+    button:hover { background: #222; }
+    #message {
+        margin-bottom: 10px;
+        font-size: 16px;
+        color: #ffdca3;
+        text-shadow: 0 0 5px rgba(255,220,180,0.4);
+    }
+    #modal {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.85);
+        z-index: 20;
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    #modal img {
+        max-width: 80%;
+        max-height: 60%;
+        border-radius: 15px;
+        box-shadow: 0 0 30px rgba(255,255,255,0.5);
+        margin-bottom: 20px;
+        transform: rotate(0deg);
+        transition: transform 0.6s ease;
+    }
+    #modal p { font-size: 20px; color: #ffdca3; margin:5px 0; }
+    #modal span { font-size: 16px; color: #ccc; }
+
+
+/* Videos laterales */
+.side-videos {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 15;
+}
+
+.side-videos.left { left: 20px; }
+.side-videos.right { right: 20px; }
+
+.video-item video {
+    width: 120px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+    transition: 0.3s;
+}
+
+.video-item video:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(255,255,255,0.6);
+}
+
+/* Modal video */
+#videoModal {
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.9);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+}
+
+.video-content {
+    text-align:center;
+    max-width:80%;
+}
+
+#videoModal video {
+    max-width:100%;
+    max-height:70vh;
+    border-radius:15px;
+    margin-bottom:20px;
+}
+
+#videoText {
+    font-size:20px;
+    color:#ffdca3;
+}
+
+</style>
+</head>
+<body>
+<canvas id="galaxy"></canvas>
+<!-- Videos laterales -->
+<div class="side-videos left">
+    <div class="video-item" 
+         data-text="En este video me reí tanto que hasta lágrimas me salieron. Desde ese día me di cuenta de lo única y ocurrida que eres. Cada vez que lo veo me vuelvo a reír.">
+        <video src="img/ay.mp4"></video>
+    </div>
+
+    <div class="video-item"
+         data-text="Este video lo repetí como diez veces. Salías tan linda que no podía dejar de mirarte, tus ojitos se veían deslumbrantes.">
+        <video src="img/hermosa.mp4"></video>
+    </div>
+</div>
+
+<div class="side-videos right">
+    <div class="video-item"
+         data-text="Pasar Navidad juntos aunque fuera a distancia fue tan lindo. Compartir fotos y momentos hizo que nuestro amor creciera aún más.">
+        <video src="img/navidad.mp4"></video>
+    </div>
+
+    <div class="video-item"
+         data-text="Ese audio vale oro. Me reí tan fuerte ese día. Nunca había conocido a alguien con tantas locuras lindas en su cabecita.">
+        <video src="img/tilin.mp4"></video>
+    </div>
+</div>
+
+<!-- Modal para videos -->
+<div id="videoModal">
+    <div class="video-content">
+        <video id="modalVideo" controls></video>
+        <p id="videoText"></p>
+    </div>
+</div>
+
+<div id="controls">
+    <div id="message">Nuestros recuerdos en la galaxia 💫</div>
+    <button id="increase">Más estrellas ✨</button>
+    <button id="decrease">Menos estrellas 🌙</button>
+</div>
+
+<div id="modal">
+    <img id="modalImg" src="">
+    <p id="modalText"></p>
+    <span id="modalDate"></span>
+</div>
+
+<script>
+const canvas = document.getElementById('galaxy');
+const ctx = canvas.getContext('2d');
+
+let width, height;
+let particles = [];
+let photos = [];
+const backgroundStars = [];
+let numParticles = 1500;
+const numBackStars = 150;
+const branches = 3;
+
+const memories = [
+    {src:'img/anaischiquita.jpg', text:'Me encanta esta foto porque te ves tan tierna y chiquita, tal como sigues siendo ahora. Me dan ganas de cuidarte siempre, porque sé que en el fondo de ti todavía vive esa niña tan linda.'},
+
+    {src:'img/collage.jpg', text:'Es un collage de todas tus ocurrencias, de tu forma de ser, de esa Anais divertida que tanto me encanta. Esa que me enamora y que no me canso de mirar, porque tal cual como eres, así me fascinas.'},
+
+    {src:'img/compras.jpg', text:'Me encanta que de todo me avises, que me cuentes, que me envíes fotos de lo que haces. Algo tan simple como ir al súper y que estés pendiente de mí, es una forma de amar muy grande, porque tienes un corazón inmenso.'},
+
+    {src:'img/fondofoto.png', text:'Cada vez que enciendo la laptop y veo esa foto, recuerdo lo mucho que me encantas. La puse porque sales tal como eres, con tu cabello hermoso y esos ojitos tan lindos que tanto me gustan.'},
+
+    {src:'img/historia.png', text:'Fue tan bonito cuando subimos esa historia a Instagram. Sabía que a ti te gustaba, y por eso me encantaba hacerlo, porque amo hacerte feliz.'},
+
+    {src:'img/labios.jpg', text:'Me encanta esta foto porque a veces me imagino cómo sería darte aunque sea un pequeño beso, al menos una vez, probar esos labios tan hermosos que tienes. Por eso esta foto me encanta tanto.'},
+
+    {src:'img/linda.jpg', text:'Anaiss, es que eres tann hermosaa. Me encanta verte, escucharte, saber de ti, ver tu cabello rojito. Saber que eres una persona increíble y que puedo escucharte por horas sin aburrirme, eso es algo que solo tú puedes hacer.'},
+
+    {src:'img/ojito.jpg', text:'Amooo ver tu ojito. Saber de ti, que me cuentes qué haces, a dónde vas, que siempre estés pendiente y me hables donde sea que estés. Eso hace que te ame aún más, mi princesa.'},
+
+    {src:'img/ojitosfleco.jpg', text:'Esta es de mis favoritas. Fue cuando te hiciste el fleco y te pintaste el pelo. Verte así, con tus ojitos tan lindos, hizo que mi corazón explotara. Fue como cuando a un niño le muestran un caramelo… así me sentí. Aunque ya había visto tus ojos mil veces, igual me volvía a enamorar cada vez.'},
+
+    {src:'img/roblox.jpg', text:'De las veces que jugábamos Roblox. Yo todo mancote y tú toda pro, pero me encantaba porque pasábamos el rato juntos. Reírnos, pelearnos en el juego, hacía que el tiempo valiera muchísimo.'}
+    ];
+
+// Cargar imágenes
+memories.forEach(mem => {
+    const img = new Image();
+    img.src = mem.src;
+    img.onload = () => { photos.push(new Photo(img, mem.text, mem.date)); }
+});
+
+function init() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    if(backgroundStars.length === 0){
+        for (let i = 0; i < numBackStars; i++) {
+            backgroundStars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 1.2,
+                opacity: 0.2 + Math.random()*0.5
+            });
+        }
+    }
+
+    particles = [];
+    for (let i=0; i<numParticles; i++) particles.push(new Particle());
+}
+
+class Particle {
+    constructor(){ this.reset(); }
+    reset() {
+        this.dist = Math.random() * Math.min(width,height) * 0.5;
+        const armIndex = Math.floor(Math.random()*branches);
+        this.angle = (armIndex*(Math.PI*2/branches)) + (this.dist*0.015);
+        this.angle += (Math.random()-0.5)*(180/this.dist);
+        this.size = Math.random()*1+0.2;
+        this.speed = Math.random()*0.001+0.0005;
+        const alpha = 0.4 + Math.random()*0.4;
+
+        if(this.dist < 80) this.color = `hsla(${40 + Math.random()*20}, 90%, 85%, ${alpha})`; // núcleo amarillo
+        else if(this.dist < 220) this.color = `hsla(200 + Math.random()*30, 80%, 75%, ${alpha})`; // brazos azul claros
+        else this.color = `hsla(210 + Math.random()*20, 60%, 70%, ${alpha})`; // bordes azul gris
+    }
+    draw(){
+        const x = width/2 + Math.cos(this.angle)*this.dist;
+        const y = height/2 + Math.sin(this.angle)*this.dist*0.45;
+        ctx.beginPath();
+        ctx.arc(x,y,this.size,0,Math.PI*2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        this.angle += this.speed;
+    }
+}
+
+class Photo {
+    constructor(img,text,date){
+        this.img = img;
+        this.text = text;
+        this.date = date;
+        this.size = 50 + Math.random()*30;
+        this.dist = 130 + Math.random()*(Math.min(width,height)*0.35);
+        this.angle = Math.random()*Math.PI*2;
+        this.speed = 0.001 + Math.random()*0.0015;
+        this.rotation = Math.random()*Math.PI*2;
+        this.pulse = Math.random()*Math.PI;
+        this.x=0; this.y=0;
+    }
+    draw(){
+        const x = width/2 + Math.cos(this.angle)*this.dist;
+        const y = height/2 + Math.sin(this.angle)*this.dist*0.5;
+        this.x=x; this.y=y;
+
+        const floatY = Math.sin(this.pulse)*10;
+
+        ctx.save();
+        ctx.translate(x,y+floatY);
+        ctx.rotate(this.rotation);
+        // brillo sutil estilo estrella
+        ctx.shadowBlur = 15 + Math.random()*10;
+        ctx.shadowColor = `rgba(255,255,255,${0.05 + Math.random()*0.2})`;
+        ctx.drawImage(this.img,-this.size/2,-this.size/2,this.size,this.size);
+        ctx.restore();
+
+        this.angle += this.speed;
+        this.rotation += 0.003;
+        this.pulse += 0.03;
+    }
+    isClicked(mx,my){
+        return mx>this.x-this.size/2 && mx<this.x+this.size/2 &&
+               my>this.y-this.size/2 && my<this.y+this.size/2;
+    }
+}
+
+function drawBackground(){
+    ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='rgba(0,0,0,0.15)';
+    ctx.fillRect(0,0,width,height);
+
+    backgroundStars.forEach(s=>{
+        ctx.beginPath();
+        ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,255,255,${s.opacity})`;
+        ctx.fill();
+    });
+}
+
+function animate(){
+    drawBackground();
+    ctx.globalCompositeOperation='lighter';
+    particles.forEach(p=>p.draw());
+    ctx.globalCompositeOperation='source-over';
+    photos.forEach(p=>p.draw());
+
+    const grad=ctx.createRadialGradient(width/2,height/2,0,width/2,height/2,150);
+    grad.addColorStop(0,'rgba(255,240,200,0.1)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,width,height);
+
+    requestAnimationFrame(animate);
+}
+
+// Modal fotos
+const modal = document.getElementById('modal');
+const modalImg = document.getElementById('modalImg');
+const modalText = document.getElementById('modalText');
+const modalDate = document.getElementById('modalDate');
+
+canvas.addEventListener('click',e=>{
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    for(let photo of photos){
+        if(photo.isClicked(mouseX,mouseY)){
+            modal.style.display='flex';
+            modalImg.src = photo.img.src;
+            modalImg.style.transform='rotate(-5deg)';
+            modalText.textContent = photo.text;
+            modalDate.textContent = photo.date;
+            break;
+        }
+    }
+});
+
+modal.addEventListener('click',()=>{modal.style.display='none';});
+
+window.addEventListener('resize',init);
+init();
+animate();
+
+// Botones
+document.getElementById('increase').addEventListener('click',()=>{
+    numParticles += 300; init();
+});
+document.getElementById('decrease').addEventListener('click',()=>{
+    numParticles = Math.max(100,numParticles-300); init();
+});
+// Sistema independiente para videos laterales con texto
+const videoItems = document.querySelectorAll('.video-item');
+const videoModal = document.getElementById('videoModal');
+const modalVideoPlayer = document.getElementById('modalVideo');
+const videoText = document.getElementById('videoText');
+
+videoItems.forEach(item => {
+    const video = item.querySelector('video');
+
+    video.addEventListener('click', () => {
+        modalVideoPlayer.src = video.src;
+        videoText.textContent = item.getAttribute('data-text');
+        videoModal.style.display = 'flex';
+        modalVideoPlayer.play();
+    });
+});
+
+videoModal.addEventListener('click', () => {
+    videoModal.style.display = 'none';
+    modalVideoPlayer.pause();
+    modalVideoPlayer.src = "";
+});
+
+</script>
+</body>
+</html>
